@@ -138,7 +138,7 @@ class LoginLib:
         url = "http://d1.web2.qq.com/channel/login2"
         payload = {'r':'{"ptwebqq":"%s","clientid":%s,"":"","status":"online"}' %(self.ptwebqq, self.clientid)}
         response = self.brower.post(url, data = payload)
-        result = json.loads(response)
+        result = json.loads(response.text)['result']
 
         self.uin = result['uin']
         self.vfwebqq = result['vfwebqq']
@@ -156,7 +156,10 @@ class LoginLib:
         result = json.loads(response.text)
         self.vfwebqq = result['result']['vfwebqq']
 
-        #>>3 获取个人信息
+        #>>3 获取psessionid
+        self.login2()
+
+        #>>4 获取个人信息
         self.get_self_info()
 
     # 获取个人信息
@@ -165,6 +168,7 @@ class LoginLib:
         response = self.brower.get(url, headers = self._headers)
         result = json.loads(response.text)['result']
         self.self_info = result
+        return result
 
     # 获取讨论组信息
     def get_discus_list(self):
@@ -172,7 +176,7 @@ class LoginLib:
         payload = {'clientid':self.clientid,'psessionid':self.psessionid,'vfwebqq':self.vfwebqq}
         response = self.brower.get(url, params = payload, headers = self._headers)
         result = json.loads(response.text)['result']
-        self.discus_list = result
+        return result
 
     # 获取好友信息[分组,好友,备注,会员...]
     def get_user_friends(self):
@@ -180,7 +184,7 @@ class LoginLib:
         payload = {'r':'{"vfwebqq":"%s","hash":"%s"}' %(self.vfwebqq,self.hash2(self.self_info['uin'],self.ptwebqq))}
         response = self.brower.get(url, params = payload, headers = self._headers)
         result = json.loads(response.text)['result']
-        self.user_friends_info = result
+        return result
 
     # 获取我的群信息(群成员信息除外)
     def get_group_name_list(self):
@@ -188,8 +192,7 @@ class LoginLib:
         payload = {'r':'{"vfwebqq":"%s","hash":"%s"}' %(self.vfwebqq,self.hash2(self.self_info['uin'],self.ptwebqq))}
         response = self.brower.post(url, params = payload, headers=self._headers)
         result = json.loads(response.text)['result']['gnamelist']
-        self.group_name_list = result
-        print(result)
+        return result
 
     # 获取最近联系人
     def get_recent_list2(self):
@@ -197,6 +200,7 @@ class LoginLib:
         payload = {'r':'{"vfwebqq":"%s","clientid":%d,"psessionid":"%s"}' %(self.vfwebqq, self.clientid, self.psessionid)}
         response = self.brower.get(url, headers = self._headers)
         result = json.loads(response.text)['result']
+        return result
 
     # 获取好友在线状态
     def get_online_buddies2(self):
@@ -204,6 +208,7 @@ class LoginLib:
         payload = {'r':'{"vfwebqq":"%s","clientid":%d,"psessionid":"%s"}' %(self.vfwebqq, self.clientid, self.psessionid)}
         response = self.brower.get(url, headers = self._headers)
         result = json.loads(response.text)['result']
+        return result
 
     # 获取某个好友签名
     def get_single_long_nick2(self, uin):
@@ -211,6 +216,7 @@ class LoginLib:
         payload = {'r':'{"vfwebqq":"%s","tuin":%d}' %(self.vfwebqq, uin)}
         response = self.brower.get(url, headers = self._headers)
         result = json.loads(response.text)['result']
+        return result
 
     # 获取好友详细信息
     def get_friend_info2(self, uin):
@@ -218,8 +224,34 @@ class LoginLib:
         payload = {'r':'{"vfwebqq":"%s","clientid":%d,"psessionid":"%s","tuin":%d}' %(self.vfwebqq, self.clientid, self.psessionid, uin)}
         response = self.brower.get(url, headers = self._headers)
         result = json.loads(response.text)['result']
+        return result
 
+    # 获取用户的QQ号通过uin,返回QQ号
+    def get_friend_uin2(self, uin):
+        url = 'http://s.web2.qq.com/api/get_friend_uin2'
+        payload = {"vfwebqq":self.vfwebqq,"tuin":uin,"type":1}
+        response = self.brower.get(url, params = payload, headers = self._headers)
+        print(response.text)
+        result = json.loads(response.text)['result']
+        return result['account']
 
+    # 消息查询
+    def poll2(self):
+        url = 'https://d1.web2.qq.com/channel/poll2'
+        payload = {'r':'{"ptwebqq":"%s","clientid":%d,"psessionid":"%s","key":""}' %(self.ptwebqq, self.clientid, self.psessionid)}
+        response = self.brower.post(url, data=payload, headers = {'Referer':'https://d1.web2.qq.com/cfproxy.html?v=20151105001&callback=1'})
+        result = json.loads(response.text)['result']
+        return result
+
+    def getMessage(self):
+        mesList = self.poll2()
+        message = ''
+        for mes in mesList:
+            message = '[%s] (%d)%s' %(mes['poll_type'], mes['value']['from_uin'],mes['value']['content'][1] )
+            print(message)
+        time.sleep(2)
+        self.getMessage()
 
 LoginLib = LoginLib()
-LoginLib.get_group_name_list()
+print('正在接收信息...')
+LoginLib.getMessage()

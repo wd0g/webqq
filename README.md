@@ -7,8 +7,8 @@
 其他版本均未测试
 
 # 使用方法
-1.```python login.py```
-2.QQ扫描终端输出的二维码,或者保存到当前目录下的```QRCode.png```
+- [x] python login.py
+- [x] QQ扫描终端输出的二维码,或者保存到当前目录下的QRCode.png
 
 
 
